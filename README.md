@@ -338,24 +338,3 @@ Use Burp Intruder → **Pitchfork** mode.
 Balance becomes negative or duplicated.
 
 ---
-
-# ⚠️ **Legal Warning**
-
-This project is intentionally insecure.
-
-✔ Use **only on your local machine**
-❌ Do NOT deploy publicly
-❌ Do NOT attack websites you do not own
-
----
-
-# 🧰 **Troubleshooting**
-
-| Problem                | Fix                                 |
-| ---------------------- | ----------------------------------- |
-| Database error         | Check `config/db.php` credentials   |
-| `uploads/` not working | Ensure folder has write permissions |
-| 500 internal error     | Check PHP version / error_log       |
-| Burp not intercepting  | Disable HTTPS or use HTTP only      |
-
----
