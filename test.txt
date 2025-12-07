@@ -1,0 +1,9 @@
+This is a test file for path traversal vulnerability.
+
+Try reading:
+- /etc/passwd (Linux)
+- C:\Windows\win.ini (Windows)
+- ../../../../etc/passwd
+- ..\..\..\windows\win.ini
+
+SECRET FLAG: PATH_TRAVERSAL_EXPLOIT_SUCCESS_{0ef15c5cf12da373}
