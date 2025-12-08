@@ -43,35 +43,41 @@ The goal is to provide a **safe local lab** similar to DVWA, but with **your own
 # 📁 **Project Structure**
 
 ```
-/vuln-lab
+vuln-lab/
 │
-├── /config
-│   ├── db.php            # Database connection (intentionally weak)
+├── Documentation/
+│   └── report.pdf                 # Full documentation & vulnerability explanations
 │
-├── /includes
-│   ├── auth.php          # Broken authentication logic
-│   ├── utils.php         # Helper functions (insecure)
+├── uploads/                       # User-uploaded files (no validation - vulnerable)
 │
-├── /public
-│   ├── index.php         # Home
-│   ├── login.php         # Vulnerable login (SQLi + brute force)
-│   ├── register.php      # Weak password rules
-│   ├── profile.php       # IDOR vulnerability
-│   ├── search.php        # Reflected XSS + SQLi
-│   ├── upload.php        # File upload RCE
-│   ├── comments.php      # Stored XSS
-│   ├── download.php      # Directory traversal
-│   ├── ping.php          # Command Injection
-│   ├── reset.php         # Weak token
-│   ├── jwt.php           # Insecure JWT
+├── config.php                     # Database & global configuration
+├── nav.php                        # Navigation menu
+├── index.php                      # Main dashboard for selecting vulnerabilities
 │
-├── /uploads              # Uploads saved here (NO validation)
+├── login.php                      # Weak authentication (SQLi, brute force)
+├── jwt.php                        # Insecure JWT generation & validation
 │
-├── /templates            # Template engine (SSTI)
+├── xss.php                        # Reflected & Stored XSS demo
+├── csrf.php                       # CSRF attack demonstration form
+├── ssrf.php                       # Server-Side Request Forgery example
+├── ssti.php                       # Server-Side Template Injection demo
+├── idor.php                       # Insecure Direct Object Reference
 │
-├── database.sql          # Table structure + weak default users
-├── README.md
-└── server.php            # PHP built-in server helper
+├── upload.php                     # Unrestricted file upload vulnerability
+├── path_traversal.php             # Directory traversal attack
+├── open_redirect.php              # Open redirect vulnerability
+│
+├── command_injection.php          # OS command injection test page
+├── deserialization.php            # Insecure PHP object deserialization
+├── race_condition.php             # Race condition testing script
+├── xxe.php                        # XML External Entity attack
+│
+├── secret_data.txt                # Sensitive file exposed (for testing)
+├── test.txt                       # Generic test file
+│
+└── README.md                      # Project documentation
+
+
 ```
 
 ---
