@@ -1,7 +1,7 @@
 
 ---
 
-# 🛡️ **README.md — Vulnerable Web Application (Training Lab)**
+# 🛡️ **Vulnerable Web Application (Training Lab)**
 
 ## 📌 **Overview**
 
