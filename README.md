@@ -52,7 +52,6 @@ The goal is to understand how these vulnerabilities work and how they are exploi
 ## Local Setup
 
 ```bash
-git clone https://github.com/yourname/vuln-lab.git
 cd vuln-lab
 ```
 
